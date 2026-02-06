@@ -1,8 +1,8 @@
 #ifndef VE_INFERENCE_H
 #define VE_INFERENCE_H
 
-#include "ve_types.h"
-#include "ve_error.h"
+#include "../core/ve_types.h"
+#include "../core/ve_error.h"
 #include "ve_result.h"
 
 #ifdef __cplusplus

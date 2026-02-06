@@ -1,7 +1,7 @@
 #ifndef VE_LOGGER_H
 #define VE_LOGGER_H
 
-#include "ve_error.h"
+#include "vision_engine/core/ve_error.h"
 #include <string>
 
 #ifdef __cplusplus

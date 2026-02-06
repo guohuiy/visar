@@ -7,7 +7,8 @@ add_library(vision_engine_algorithms STATIC
 )
 
 target_include_directories(vision_engine_algorithms PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/vision_engine
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../..
 )
 
 target_link_libraries(vision_engine_algorithms PRIVATE

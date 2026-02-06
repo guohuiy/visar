@@ -86,8 +86,8 @@ add_subdirectory(src/inference)
 # 编译后端模块
 add_subdirectory(src/backends)
 
-# 算法模块 (待实现)
-# add_subdirectory(src/algorithms)
+# 算法模块 (已实现)
+add_subdirectory(src/algorithms)
 
 # 量化模块 (待实现)
 # add_subdirectory(src/quantization)

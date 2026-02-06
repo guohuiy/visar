@@ -1,8 +1,8 @@
 #ifndef VE_ALGORITHMS_H
 #define VE_ALGORITHMS_H
 
-#include "ve_types.h"
-#include "ve_error.h"
+#include "../core/ve_types.h"
+#include "../core/ve_error.h"
 
 #ifdef __cplusplus
 #include <string>
@@ -61,6 +61,9 @@ public:
         YOLOX
     };
     
+    YOLODetector();
+    virtual ~YOLODetector() = default;
+    
     VeStatusCode Initialize(const std::string& model_path, const Config& config) override;
     std::vector<Detection> Detect(const uint8_t* image_data,
                                   int width, int height,
@@ -73,7 +76,8 @@ private:
     std::vector<std::string> class_names_;
     
     void Preprocess(const uint8_t* image, int width, int height, float* output);
-    std::vector<Detection> Postprocess(const float* output, int output_size, int original_width, int original_height);
+    std::vector<Detection> Postprocess(const float* output, int output_size, int original_width, int original_height,
+                                        float scale_x, float scale_y, int pad_x, int pad_y);
 };
 
 /**

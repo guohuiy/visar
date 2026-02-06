@@ -47,7 +47,7 @@ VisionEngine/
 │   ├── backends/                     # 后端实现
 │   │   ├── onnx/                   # ONNX Runtime后端
 │   │   └── tensorrt/               # TensorRT后端
-│   ├── algorithms/                   # 算法模块 (待开发)
+│   ├── algorithms/                   # 算法模块 
 │   ├── quantization/                 # 量化模块 (头文件已定义)
 │   └── ota/                         # OTA模块 (头文件已定义)
 ├── examples/                         # 示例应用
@@ -412,9 +412,12 @@ typedef struct {
 ### 待开发 ⏳
 - [ ] INT8量化引擎
 - [ ] OTA热更新系统
-- [ ] 算法模块 (YOLO/OCR)
 - [ ] Qt6测试Demo
 - [ ] Linux跨平台测试
+
+### 已编译验证 ✅
+- [x] 算法模块 (YOLO/OCR)
+  - 输出: `build/src/algorithms/Release/vision_engine_algorithms.lib`
 
 ## 依赖库
 
