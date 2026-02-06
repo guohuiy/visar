@@ -142,8 +142,16 @@ void MainWindow::onLoadImage() {
     }
 }
 
+void MainWindow::onStartCamera() {
+    updateStatusBar("Camera not available in demo mode");
+}
+
 void MainWindow::onLoadVideo() {
     updateStatusBar("Video loading not implemented yet");
+}
+
+void MainWindow::onQuantizationChanged(int index) {
+    updateStatusBar(QString("Quantization changed to index: %1").arg(index));
 }
 
 void MainWindow::onStartInference() {

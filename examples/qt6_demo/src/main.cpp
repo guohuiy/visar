@@ -1,7 +1,8 @@
 #include <QApplication>
-#include <QMainWindow>
 #include <QSurfaceFormat>
 #include <iostream>
+
+#include "MainWindow.h"
 
 int main(int argc, char *argv[]) {
     // 设置OpenGL格式
@@ -15,7 +16,7 @@ int main(int argc, char *argv[]) {
     app.setApplicationVersion("1.0.0");
     
     // 创建主窗口
-    QMainWindow window;
+    MainWindow window;
     window.show();
     
     return app.exec();
