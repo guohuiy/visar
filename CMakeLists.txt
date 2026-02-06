@@ -76,15 +76,23 @@ endif()
 # 日志系统 - 使用内联实现，无外部依赖
 message(STATUS "Using inline logger implementation")
 
-# 只编译核心模块
+# 编译核心模块
 add_subdirectory(include/vision_engine)
 add_subdirectory(src/core)
 
-# 子目录 - 禁用inference等复杂模块（因为缺少完整实现）
-# add_subdirectory(src/inference)
-# add_subdirectory(src/backends)
+# 编译推理模块
+add_subdirectory(src/inference)
+
+# 编译后端模块
+add_subdirectory(src/backends)
+
+# 算法模块 (待实现)
 # add_subdirectory(src/algorithms)
+
+# 量化模块 (待实现)
 # add_subdirectory(src/quantization)
+
+# OTA模块 (待实现)
 # add_subdirectory(src/ota)
 
 if(BUILD_TESTS)

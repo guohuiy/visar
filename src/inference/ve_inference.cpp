@@ -1,5 +1,9 @@
 #include "ve_inference.h"
-#include "ve_logger.h"
+#include "ve_result.h"
+#include "ve_model.h"
+#include "../core/ve_logger.h"
+#include <fstream>
+#include <algorithm>
 
 namespace vision_engine {
 
@@ -10,6 +14,8 @@ public:
     std::string last_error_;
     VeModelInfo model_info_;
     ResultCallback result_callback_;
+    float confidence_threshold_ = 0.5f;
+    float nms_threshold_ = 0.45f;
 };
 
 InferenceEngine::InferenceEngine() : impl_(std::make_unique<Impl>()) {}
@@ -111,11 +117,13 @@ VePerformanceMetrics InferenceEngine::GetPerformanceMetrics() const {
 }
 
 void InferenceEngine::SetConfidenceThreshold(float threshold) {
-    impl_->options_.SetConfidenceThreshold(threshold);
+    impl_->confidence_threshold_ = std::clamp(threshold, 0.0f, 1.0f);
+    impl_->model_info_.confidence_threshold = impl_->confidence_threshold_;
 }
 
 void InferenceEngine::SetNMSThreshold(float threshold) {
-    impl_->options_.SetNMSThreshold(threshold);
+    impl_->nms_threshold_ = std::clamp(threshold, 0.0f, 1.0f);
+    impl_->model_info_.nms_threshold = impl_->nms_threshold_;
 }
 
 std::string InferenceEngine::GetLastError() const {
@@ -135,13 +143,7 @@ VeInferenceHandle ve_inference_create(const VeEngineOptions* options) {
     if (!options) return nullptr;
     
     auto engine = new InferenceEngine();
-    EngineOptions opts;
-    opts.SetPreferredBackend(options->preferred_backend);
-    opts.SetDeviceType(options->device_type);
-    opts.SetPrecision(options->precision);
-    opts.SetNumThreads(options->num_threads);
-    
-    if (engine->Initialize(opts) != VE_SUCCESS) {
+    if (engine->Initialize(*options) != VE_SUCCESS) {
         delete engine;
         return nullptr;
     }
@@ -182,6 +184,54 @@ VeInferenceResult* ve_inference_infer(VeInferenceHandle handle, const VeImageDat
     auto* cr = new VeInferenceResult();
     cr->inference_time_ms = static_cast<float>(result->GetInferenceTimeMs());
     return cr;
+}
+
+void ve_inference_infer_async(VeInferenceHandle handle,
+                               const VeImageData* image,
+                               VeInferenceCallback callback) {
+    if (!handle || !image || !callback) return;
+    auto engine = static_cast<InferenceEngine*>(handle);
+    std::async(std::launch::async, [engine, image, callback]() {
+        auto result = engine->Infer(*image);
+        VeInferenceResult* cr = new VeInferenceResult();
+        cr->inference_time_ms = static_cast<float>(result->GetInferenceTimeMs());
+        callback(cr);
+    });
+}
+
+void ve_inference_set_callback(VeInferenceHandle handle, VeInferenceCallback callback) {
+    if (handle) {
+        auto engine = static_cast<InferenceEngine*>(handle);
+        engine->SetResultCallback([callback](std::shared_ptr<InferenceResult> result) {
+            VeInferenceResult* cr = new VeInferenceResult();
+            cr->inference_time_ms = static_cast<float>(result->GetInferenceTimeMs());
+            callback(cr);
+        });
+    }
+}
+
+VeInferenceResult** ve_inference_infer_batch(VeInferenceHandle handle,
+                                             const VeImageData* images,
+                                             int32_t batch_size,
+                                             int32_t* result_count) {
+    if (!handle || !images || batch_size <= 0) {
+        if (result_count) *result_count = 0;
+        return nullptr;
+    }
+    
+    auto engine = static_cast<InferenceEngine*>(handle);
+    auto batch_result = engine->InferBatch(images, batch_size);
+    
+    auto* results = new VeInferenceResult*[batch_size];
+    *result_count = batch_size;
+    
+    for (int32_t i = 0; i < batch_size; ++i) {
+        auto result = batch_result->GetResult(i);
+        results[i] = new VeInferenceResult();
+        results[i]->inference_time_ms = static_cast<float>(result->GetInferenceTimeMs());
+    }
+    
+    return results;
 }
 
 VeStatusCode ve_inference_warmup(VeInferenceHandle handle) {

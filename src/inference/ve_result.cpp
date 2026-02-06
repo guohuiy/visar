@@ -1,6 +1,7 @@
 #include "ve_result.h"
 #include <algorithm>
 #include <numeric>
+#include <sstream>
 
 namespace vision_engine {
 

@@ -6,7 +6,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../../include/vision_engine/core
     ${CMAKE_CURRENT_SOURCE_DIR}/../../include/vision_engine/inference
     ${CMAKE_CURRENT_SOURCE_DIR}/../../include/vision_engine
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../src/inference
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src/core
 )
 
 # 创建推理库
