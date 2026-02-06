@@ -26,9 +26,9 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Charts)
 set(ONNXRUNTIME_ROOT "C:/onnxruntime-win-x64-gpu-1.23.2" CACHE PATH "ONNX Runtime root")
 
 # VisionEngine库路径
-set(VISION_ENGINE_ROOT "D:/codes/QT_V/visa")
-set(VISION_ENGINE_INCLUDE_DIR "D:/codes/QT_V/visa/VisionEngine/include")
-set(VISION_ENGINE_CORE_LIB "D:/codes/QT_V/visa/build/windows/src/core/Release/vision_engine_core.lib")
+set(VISION_ENGINE_ROOT "D:/codes/QT_V/visar-master")
+set(VISION_ENGINE_INCLUDE_DIR "D:/codes/QT_V/visar-master/VisionEngine/include")
+set(VISION_ENGINE_CORE_LIB "D:/codes/QT_V/visar-master/build/windows/src/core/Release/vision_engine_core.lib")
 
 # ONNX Runtime库
 set(ONNXRUNTIME_LIB "${ONNXRUNTIME_ROOT}/lib/onnxruntime.lib")
