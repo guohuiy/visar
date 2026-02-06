@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QMainWindow>
 #include <QSurfaceFormat>
 #include <iostream>
 

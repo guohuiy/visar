@@ -1,12 +1,13 @@
 # Inference模块CMakeLists.txt
 cmake_minimum_required(VERSION 3.16)
 
-# ONNX Runtime (可选)
-find_package(ONNXRuntime QUIET)
-if(ONNXRuntime_FOUND)
-    message(STATUS "ONNX Runtime found, enabling ONNX backend")
-    add_definitions(-DHAVE_ONNX)
-endif()
+# 包含路径 - 添加所有子目录
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../include/vision_engine/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../include/vision_engine/inference
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../include/vision_engine
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src/inference
+)
 
 # 创建推理库
 add_library(vision_engine_inference STATIC
@@ -15,14 +16,14 @@ add_library(vision_engine_inference STATIC
     ve_inference.cpp
 )
 
-target_include_directories(vision_engine_inference PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/vision_engine
-)
-
-target_link_libraries(vision_engine_inference PRIVATE
-    vision_engine_core
-    ${ONNXRuntime_LIBRARIES}
-)
+if(HAVE_ONNX)
+    target_include_directories(vision_engine_inference PRIVATE
+        ${ONNXRuntime_INCLUDE_DIR}
+    )
+    target_link_libraries(vision_engine_inference PRIVATE
+        ${ONNXRuntime_LIBRARY}
+    )
+endif()
 
 install(TARGETS vision_engine_inference
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

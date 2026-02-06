@@ -22,7 +22,7 @@ private slots:
     void onLoadImage();
     void onLoadVideo();
     void onStartCamera();
-    void onRunInference();
+    void onStartInference();
     void onModelChanged(int index);
     void onBackendChanged(int index);
     void onQuantizationChanged(int index);
@@ -42,7 +42,7 @@ private:
     QPushButton* loadImageBtn_;
     QPushButton* loadVideoBtn_;
     QPushButton* startCameraBtn_;
-    QPushButton* runInferenceBtn_;
+    QPushButton* startInferenceBtn_;
     QPushButton* otaUpdateBtn_;
     QComboBox* modelSelector_;
     QComboBox* backendSelector_;

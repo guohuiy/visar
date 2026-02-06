@@ -142,43 +142,158 @@ VisionEngine/
 
 ## 编译方法
 
-### Windows (Visual Studio 2022)
+### 环境要求
 
+#### Windows
+- Visual Studio 2022 (已安装于 C:\Program Files\Microsoft Visual Studio\)
+- CMake 3.16+ (已安装于 C:\cmake-3.30.5-windows-x86_64\)
+- ONNX Runtime GPU版 (已安装于 C:\onnxruntime-win-x64-gpu-1.23.2\)
+- TensorRT (可选，已安装于 C:\TensorRT-10.10.0.31\)
+- Qt6 (可选，已安装于 C:\Qt\)
+- OpenCV (可选，已安装于 C:\opencv\)
+
+#### Linux
+- GCC/Clang 编译器
+- CMake 3.16+
+- ONNX Runtime
+- TensorRT (可选)
+- ncnn (可选，位于 D:\tools\ncnn)
+- vcpkg (依赖管理，位于 D:\tools\vcpkg)
+
+### Windows 编译
+
+#### 方式一：使用编译脚本（推荐）
 ```cmd
-mkdir build
-cd build
-cmake .. -G "Visual Studio 17 2022" -DENABLE_CUDA=ON
+cd D:\codes\QT_V\visa
+build_windows.bat
+```
+
+#### 方式二：手动编译
+```cmd
+mkdir build\windows
+cd build\windows
+cmake ..\VisionEngine -G "Visual Studio 17 2022" -DENABLE_CUDA=ON
 cmake --build . --config Release
 ```
 
-### Linux
+**输出文件：**
+- 静态库：`build\windows\src\core\Release\vision_engine_core.lib`
+- ONNX Runtime DLL 已被复制到构建目录
+
+### Linux 编译
 
 ```bash
-mkdir build
-cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_CUDA=ON
-make -j$(nproc)
+cd D:\codes\QT_V\visa
+chmod +x build_linux.sh
+./build_linux.sh
 ```
 
-### macOS
-
+**或手动编译：**
 ```bash
-mkdir build
-cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j$(nproc)
+mkdir -p build/linux
+cd build/linux
+cmake ../../VisionEngine \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=../../install/linux \
+    -DENABLE_ONNX=ON \
+    -DENABLE_TENSORRT=OFF \
+    -DENABLE_NCNN=OFF
+cmake --build . --config Release
+cmake --install .
+```
+
+### 交叉编译（Windows → Linux）
+
+使用 mingw-w64 进行交叉编译：
+```bash
+# 安装 mingw-w64
+pacman -S mingw-w64-x86_64 cmake
+
+# 交叉编译
+mkdir -p build/linux-cross
+cd build/linux-cross
+cmake ../../VisionEngine \
+    -DCMAKE_TOOLCHAIN_FILE=/usr/share/mingw-w64/cmake/x86_64-w64-mingw32.cmake \
+    -DCMAKE_BUILD_TYPE=Release
+cmake --build .
 ```
 
 ## 依赖项
 
+### 必需依赖
 - CMake 3.16+
 - C++17 编译器
-- spdlog (日志库)
-- ONNX Runtime 1.16+ (可选)
-- TensorRT 8.6+ (可选，NVIDIA GPU)
-- NCNN (可选，移动端)
-- Qt6 6.0+ (用于Qt6 Demo)
-- OpenCV 4.8+ (可选)
+- ONNX Runtime 1.16+ (默认启用)
+- Threads (线程库)
+
+### 可选依赖
+- TensorRT 8.6+ (NVIDIA GPU加速，位于 C:\TensorRT-10.10.0.31\)
+- NCNN (移动端，位于 D:\tools\ncnn)
+- Qt6 6.0+ (用于Qt6 Demo，位于 C:\Qt\)
+- OpenCV 4.8+ (图像处理，位于 C:\opencv\，当前版本未启用)
+
+### 移除的依赖
+- ~~spdlog~~ - 已移除，使用内联日志实现
+
+## 编译配置选项
+
+| 选项 | 默认值 | 说明 |
+|------|--------|------|
+| BUILD_TESTS | OFF | 构建测试 |
+| BUILD_EXAMPLES | OFF | 构建示例 |
+| BUILD_TOOLS | OFF | 构建工具 |
+| ENABLE_ONNX | ON | 启用ONNX Runtime后端 |
+| ENABLE_TENSORRT | OFF | 启用TensorRT后端 |
+| ENABLE_NCNN | OFF | 启用NCNN后端 |
+| ENABLE_CUDA | OFF | 启用CUDA支持 |
+
+## 已知问题
+
+1. **inference模块头文件依赖问题** - VE_API宏未定义，导致推理模块编译失败
+2. **量化/OTA模块未实现** - 相关头文件缺少完整实现
+
+### 临时解决方案
+
+当前只编译核心静态库：
+```cmake
+# CMakeLists.txt 中只启用核心模块
+add_subdirectory(src/core)  # 核心库已编译成功
+# add_subdirectory(src/inference)  # 推理模块待修复
+```
+
+### 后续修复计划
+
+1. 修复 `include/vision_engine/inference/ve_result.h` 中的 `VE_API` 宏定义
+2. 修复 `include/vision_engine/inference/ve_model.h` 的类型依赖
+3. 修复 `include/vision_engine/ota/ve_ota.h` 的回调函数签名
+
+## 目录结构
+
+```
+build/
+├── windows/           # Windows构建输出
+│   ├── src/core/Release/
+│   │   └── vision_engine_core.lib  # 静态库
+│   ├── onnxruntime.dll
+│   └── ...
+└── linux/            # Linux构建输出 (待生成)
+    └── lib/
+        └── libvision_engine_core.a
+
+install/
+└── linux/           # Linux安装目录
+    ├── lib/
+    │   └── libvision_engine_core.a
+    └── include/
+        └── vision_engine/
+```
+
+## 头文件包含路径
+
+编译时需添加以下include路径：
+- `${PROJECT_SOURCE_DIR}/include`
+- `${PROJECT_SOURCE_DIR}/src`
+- `${ONNXRuntime_INCLUDE_DIR}` (如果启用ONNX)
 
 ## Qt6 Demo功能
 
