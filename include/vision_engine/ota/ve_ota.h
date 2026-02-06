@@ -305,11 +305,11 @@ typedef struct {
     char version[64];              // 新版本号
     char downloadUrl[512];         // 下载地址
     size_t fileSize;              // 文件大小
-    char md5Checksum[64];          // MD5校验和
+    char md5Checksum[64];         // MD5校验和
     char releaseNotes[1024];       // 发布说明
     int isMandatory;              // 是否强制更新
-    int deltaUpdate;               // 是否支持增量更新
-    char deltaVersion[64];         // 增量更新源版本
+    int deltaUpdate;              // 是否支持增量更新
+    char deltaVersion[64];        // 增量更新源版本
 } VeUpdateInfo;
 
 /**
@@ -331,9 +331,9 @@ typedef struct {
     char serverURL[512];          // 模型服务器地址
     char currentVersion[64];      // 当前模型版本
     int autoUpdate;               // 是否自动更新
-    VeUpdateStrategy strategy;     // 更新策略
+    VeUpdateStrategy strategy;    // 更新策略
     char cachePath[512];          // 本地缓存路径
-    int enableDeltaUpdate;         // 启用增量更新
+    int enableDeltaUpdate;        // 启用增量更新
     char encryptionKey[256];       // 模型加密密钥
 } VeOTAConfig;
 

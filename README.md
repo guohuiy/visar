@@ -15,7 +15,6 @@ VisionEngine/
 ├── include/vision_engine/            # 公共头文件
 │   ├── CMakeLists.txt
 │   ├── vision_engine.h               # 主头文件
-│   ├── VisionEngineConfig.cmake.in
 │   ├── core/                         # 核心接口层
 │   │   ├── ve_types.h               # 类型定义
 │   │   ├── ve_error.h               # 错误码定义
@@ -84,25 +83,6 @@ cmake --build . --config Release
 build_windows_mingw.bat
 ```
 
-### Linux 编译
-
-```bash
-chmod +x build_linux.sh
-./build_linux.sh
-```
-
-## 编译配置选项
-
-| 选项 | 默认值 | 说明 |
-|------|--------|------|
-| BUILD_TESTS | OFF | 构建测试 |
-| BUILD_EXAMPLES | OFF | 构建示例 |
-| BUILD_TOOLS | OFF | 构建工具 |
-| ENABLE_ONNX | ON | 启用ONNX Runtime后端 |
-| ENABLE_TENSORRT | OFF | 启用TensorRT后端 |
-| ENABLE_NCNN | OFF | 启用NCNN后端 |
-| ENABLE_CUDA | OFF | 启用CUDA支持 |
-
 ## 开发状态
 
 ### 已完成 ✅
@@ -125,15 +105,6 @@ chmod +x build_linux.sh
 - [ ] 算法模块 (YOLO/OCR)
 - [ ] Qt6测试Demo
 - [ ] Linux跨平台测试
-
-## 主要特性
-
-1. **多后端支持**: ONNX Runtime, TensorRT, OpenVINO, NCNN
-2. **INT8量化引擎**: PTQ后训练量化、动态量化
-3. **OTA热更新**: 模型无缝切换、增量更新
-4. **算法模块**: YOLO目标检测、UNet/DeepLab分割、OCR识别
-5. **C API接口**: 支持多语言绑定
-6. **跨平台设计**: Windows, Linux, macOS, Android, iOS
 
 ## 依赖库
 
