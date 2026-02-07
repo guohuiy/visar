@@ -28,10 +28,12 @@ VisionEngine/
 │   ├── ota/                         # OTA模块
 │   │   └── ve_ota.h                 # OTA更新器
 │   ├── algorithms/                   # 算法模块
-│   │   └── ve_algorithms.h         # 目标检测/分割/OCR
+│   │   ├── ve_algorithms.h           # 目标检测/分割/OCR
+│   │   ├── ve_nms.h                 # NMS后处理 (IoU/GIoU/DIoU/CIoU)
+│   │   └── ve_detector.h            # YOLO/SSD输出解析器
 │   └── backends/                    # 后端接口
-│       ├── ve_onnx_backend.h        # ONNX Runtime后端
-│       └── ve_tensorrt_backend.h   # TensorRT后端
+│       ├── ve_onnx_backend.h         # ONNX Runtime后端
+│       └── ve_tensorrt_backend.h    # TensorRT后端
 ├── src/                             # 源代码
 │   ├── core/                         # 核心模块
 │   │   ├── CMakeLists.txt
@@ -46,28 +48,156 @@ VisionEngine/
 │   │   └── ve_result.cpp           # 推理结果实现
 │   ├── backends/                     # 后端实现
 │   │   ├── onnx/                   # ONNX Runtime后端
+│   │   │   ├── ve_onnx_backend.cpp
+│   │   │   └── CMakeLists.txt
 │   │   └── tensorrt/               # TensorRT后端
-│   ├── algorithms/                   # 算法模块 
+│   │       ├── ve_tensorrt_backend.cpp
+│   │       └── CMakeLists.txt
+│   ├── algorithms/                   # 算法模块
 │   ├── quantization/                 # 量化模块 (头文件已定义)
 │   └── ota/                         # OTA模块 (头文件已定义)
 ├── examples/                         # 示例应用
-│   └── qt6_demo/                    # Qt6测试应用 (待开发)
+│   ├── qt6_demo/                    # Qt6测试应用
+│   └── python_demo/                 # Python测试示例
 ├── tests/                            # 测试
 │   └── CMakeLists.txt
 └── tools/                            # 工具
-    └── model_converter/              # 模型转换工具 (待开发)
+    └── model_converter/              # 模型转换工具
+```
+
+## 新增功能 (v2.0)
+
+### 1. TensorRT GPU加速
+
+支持NVIDIA GPU加速推理，提供FP16/INT8精度支持：
+
+```cpp
+#include "ve_tensorrt_backend.h"
+
+using namespace vision_engine;
+
+// 创建TensorRT后端
+TensorRTBackend engine;
+
+// 初始化 (支持 .onnx 或 .trt 文件)
+VeEngineOptions options;
+options.precision = VE_PRECISION_FP16;
+engine.Initialize("model.trt", options);
+
+// 启用FP16加速
+engine.EnableFP16();
+
+// 执行推理
+std::vector<float> output_data(output_size);
+engine.Infer(input_data.data(), input_shape, output_data.data());
+
+// 预热模型
+engine.Warmup(10);
+
+// 获取GPU内存使用
+size_t mem = engine.GetDeviceMemoryUsage();
+```
+
+### 2. NMS后处理模块
+
+支持多种NMS算法：
+
+```cpp
+#include "ve_nms.h"
+
+using namespace vision_engine::postprocess;
+
+// 标准NMS
+auto result = NonMaximumSuppression(detections, 0.45f);
+
+// Soft-NMS (高斯衰减)
+auto result = SoftNMS(detections, 0.45f, 0.5f, 1);
+
+// CIoU-NMS (使用Complete IoU)
+auto result = ClasswiseNMS(detections, 0.45f);
+
+// 按类别执行NMS
+auto result = ClasswiseNMS(detections, 0.45f);
+
+// 置信度过滤
+auto result = FilterByConfidence(detections, 0.5f);
+
+// IoU计算
+float iou = CalculateIoU(bbox_a, bbox_b);
+float giou = CalculateGIoU(bbox_a, bbox_b);
+float diou = CalculateDIoU(bbox_a, bbox_b);
+float ciou = CalculateCIoU(bbox_a, bbox_b);
+```
+
+### 3. YOLO检测结果解析器
+
+支持YOLOv5/v7/v8/vX输出解析：
+
+```cpp
+#include "ve_detector.h"
+
+using namespace vision_engine::postprocess;
+
+// 创建解析器
+YOLOParser parser;
+YOLOParser::Config config;
+config.confidence_threshold = 0.5f;
+config.nms_threshold = 0.45f;
+config.num_classes = 80;
+config.use_ciou = true;
+parser.SetConfig(config);
+
+// 解析YOLOv8输出
+auto detections = parser.ParseYOLOv8(
+    output_data.data(),
+    output_shape,
+    original_width,
+    original_height,
+    scale_x,
+    scale_y,
+    pad_x,
+    pad_y
+);
+
+// 获取COCO类别名称
+const char* name = GetCOCOClassName(class_id);
+
+// 可视化检测结果
+auto visualized = DetectionVisualizer::DrawDetections(
+    image_data, width, height, detections);
 ```
 
 ## 编译状态
 
 ### Windows (MSVC) ✅ 已完成
 - **输出文件**: 
-  - `build/windows/src/core/Release/vision_engine_core.lib` (234 KB)
-  - `build/windows/src/inference/Release/vision_engine_inference.lib` (869 KB)
+  - `build/src/core/Release/vision_engine_core.lib`
+  - `build/src/inference/Release/vision_engine_inference.lib`
+  - `build/src/algorithms/Release/vision_engine_algorithms.lib`
 - **编译器**: Visual Studio 2022 (MSVC 14.36.32548.0)
+
+### Qt6 Demo ✅ 已完成
+- **输出文件**: `examples/qt6_demo/build/Release/VisionEngineDemo.exe` (108 KB)
+- **功能**: 基于Qt6的目标检测演示程序，支持图像加载和ONNX模型推理
+- **模型路径**: `examples/qt6_demo/models/yolov8n.onnx`
 
 ### Linux ⏳ 待编译
 - 使用 `build_linux.sh` 脚本在Linux环境下编译
+
+### Python Demo ✅ 已完成
+- **输出文件**: `examples/python_demo/test_vision_engine.py`
+- **功能**: Python接口测试示例，支持ONNX模型推理测试
+- **模型路径**: `examples/qt6_demo/models/yolov8n.onnx`
+- **运行方式**:
+  ```bash
+  cd examples/python_demo
+  pip install -r requirements.txt
+  python test_vision_engine.py --model ../qt6_demo/models/yolov8n.onnx
+  ```
+- **测试结果**:
+  - 模型: yolov8n.onnx (12.21 MB)
+  - 推理时间: ~80ms (CPU)
+  - 支持: 单图测试、批量测试、性能基准测试
 
 ## 快速开始
 
@@ -88,6 +218,15 @@ cmake --build . --config Release
 
 ```cmd
 build_windows_mingw.bat
+```
+
+### TensorRT 编译配置
+
+```cmake
+# CMake配置中启用TensorRT
+-DENABLE_TENSORRT=ON
+-DTENSORRT_INCLUDE_DIR="C:/TensorRT-10.10.0.31/include"
+-DTENSORRT_LIBRARY_DIR="C:/TensorRT-10.10.0.31/lib"
 ```
 
 ## 接口使用说明
@@ -336,7 +475,46 @@ for (int32_t i = 0; i < result_count; i++) {
 free(results);
 ```
 
-### 常用类型说明
+### Python 接口
+
+Python测试示例位于 `examples/python_demo/`，提供以下功能：
+
+#### 1. 安装依赖
+
+```bash
+cd examples/python_demo
+pip install -r requirements.txt
+```
+
+#### 2. 运行测试
+
+```bash
+# 默认测试
+python test_vision_engine.py
+
+# 指定模型测试
+python test_vision_engine.py --model ../qt6_demo/models/yolov8n.onnx
+```
+
+#### 3. Python API 示例
+
+```python
+from test_vision_engine import VisionEngineSimulator, test_single_image
+
+# 创建引擎并加载模型
+engine = VisionEngineSimulator("path/to/model.onnx")
+
+# 测试单张图像
+detections = test_single_image(engine, "path/to/image.jpg")
+
+# 查看检测结果
+for det in detections:
+    print(f"类别: {det['class_name']}, 置信度: {det['score']:.4f}")
+    bbox = det['bbox']
+    print(f"位置: ({bbox['x1']:.1f}, {bbox['y1']:.1f}) - ({bbox['x2']:.1f}, {bbox['y2']:.1f})")
+```
+
+## 常用类型说明
 
 ```c
 // 设备类型
@@ -377,62 +555,4 @@ typedef enum {
 // 检测结果
 typedef struct {
     float x1, y1;           // 左上角坐标
-    float x2, y2;           // 右下角坐标
-    float score;            // 置信度
-    int32_t class_id;       // 类别ID
-    const char* class_name; // 类别名称
-} VeDetection;
-
-// 性能指标
-typedef struct {
-    double preprocess_time_ms;   // 预处理时间
-    double inference_time_ms;    // 推理时间
-    double postprocess_time_ms;  // 后处理时间
-    double total_time_ms;        // 总时间
-    size_t memory_used_bytes;   // 内存使用量
-} VePerformanceMetrics;
-```
-
-## 开发状态
-
-### 已完成 ✅
-- [x] 项目架构设计
-- [x] 核心类型定义
-- [x] 错误处理机制
-- [x] 日志系统
-- [x] 内存管理
-- [x] 线程池
-- [x] 引擎主入口
-- [x] CMake构建系统
-- [x] Windows编译
-- [x] 推理模块实现 (inference/)
-- [x] ONNX Runtime后端集成
-- [x] TensorRT后端集成
-
-### 待开发 ⏳
-- [ ] INT8量化引擎
-- [ ] OTA热更新系统
-- [ ] Qt6测试Demo
-- [ ] Linux跨平台测试
-
-### 已编译验证 ✅
-- [x] 算法模块 (YOLO/OCR)
-  - 输出: `build/src/algorithms/Release/vision_engine_algorithms.lib`
-
-## 依赖库
-
-| 依赖 | 路径 | 状态 |
-|------|------|------|
-| ONNX Runtime GPU | C:\onnxruntime-win-x64-gpu-1.23.2 | 已集成 |
-| TensorRT | C:\TensorRT-10.10.0.31 | 已集成 |
-| OpenCV | C:\opencv\ | 可选 |
-| Qt6 | C:\Qt\ | 可选 |
-| NCNN | D:\tools\ncnn | 可选 |
-
-## GitHub
-
-项目地址: https://github.com/guohuiy/visar.git
-
-## 许可证
-
-MIT License
+    float x2

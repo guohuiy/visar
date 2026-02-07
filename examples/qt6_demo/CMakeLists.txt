@@ -28,7 +28,9 @@ set(ONNXRUNTIME_ROOT "C:/onnxruntime-win-x64-gpu-1.23.2" CACHE PATH "ONNX Runtim
 # VisionEngine库路径
 set(VISION_ENGINE_ROOT "D:/codes/QT_V/visar-master")
 set(VISION_ENGINE_INCLUDE_DIR "D:/codes/QT_V/visar-master/VisionEngine/include")
-set(VISION_ENGINE_CORE_LIB "D:/codes/QT_V/visar-master/build/windows/src/core/Release/vision_engine_core.lib")
+set(VISION_ENGINE_CORE_LIB "D:/codes/QT_V/visar-master/build/src/core/Release/vision_engine_core.lib")
+set(VISION_ENGINE_INFERENCE_LIB "D:/codes/QT_V/visar-master/build/src/inference/Release/vision_engine_inference.lib")
+set(VISION_ENGINE_ALGORITHMS_LIB "D:/codes/QT_V/visar-master/build/src/algorithms/Release/vision_engine_algorithms.lib")
 
 # ONNX Runtime库
 set(ONNXRUNTIME_LIB "${ONNXRUNTIME_ROOT}/lib/onnxruntime.lib")
@@ -67,13 +69,15 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     "${QT6_ROOT}/include"
 )
 
-# 链接Qt6库
+# 链接Qt6库和VisionEngine
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Core
     Qt6::Widgets
     Qt6::Gui
     Qt6::Charts
     "${VISION_ENGINE_CORE_LIB}"
+    "${VISION_ENGINE_INFERENCE_LIB}"
+    "${VISION_ENGINE_ALGORITHMS_LIB}"
     "${ONNXRUNTIME_ROOT}/lib/onnxruntime.lib"
 )
 
@@ -111,11 +115,12 @@ if(WIN32)
         COMMENT "Copying Qt platform plugin"
     )
     
-    # 复制Qt依赖的翻译文件
+    # 复制Qt依赖的翻译文件（可选，失败不影响运行）
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/translations"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${QT6_ROOT}/translations/qtbase_*.qm"
+            "${QT6_ROOT}/translations/qtbase_zh_CN.qm"
+            "${QT6_ROOT}/translations/qtbase_en.qm"
             "$<TARGET_FILE_DIR:${PROJECT_NAME}>/translations/"
         COMMENT "Copying Qt translations"
     )

@@ -1,4 +1,6 @@
 #include "ve_result.h"
+#include "ve_inference.h"
+#include "vision_engine/inference/ve_inference.h"
 #include <algorithm>
 #include <numeric>
 #include <sstream>
@@ -36,6 +38,10 @@ double InferenceResult::GetInferenceTimeMs() const {
     return impl_->inference_time_ms_;
 }
 
+void InferenceResult::SetInferenceTimeMs(double time_ms) {
+    impl_->inference_time_ms_ = time_ms;
+}
+
 const void* InferenceResult::GetRawOutput() const {
     return impl_->raw_output_.data();
 }
@@ -63,9 +69,12 @@ std::string InferenceResult::ToJSON() const {
     return oss.str();
 }
 
+void InferenceResult::AddDetection(const VeDetection& detection) {
+    impl_->detections_.push_back(detection);
+}
+
 std::vector<uint8_t> InferenceResult::Visualize(const std::vector<uint8_t>& original_image,
                                                   int32_t width, int32_t height) const {
-    // 简化实现：返回原始图像
     return original_image;
 }
 
@@ -100,7 +109,11 @@ double BatchResult::GetAverageInferenceTimeMs() const {
     return sum / impl_->results_.size();
 }
 
+} // namespace vision_engine
+
 // C API实现
+extern "C" {
+
 int32_t ve_result_get_detection_count(const VeInferenceResult* result) {
     if (result) {
         return result->num_detections;
@@ -131,4 +144,4 @@ void ve_result_destroy(VeInferenceResult* result) {
     }
 }
 
-} // namespace vision_engine
+} // extern "C"

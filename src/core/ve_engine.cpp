@@ -31,6 +31,11 @@ private:
 // 全局引擎实例
 static EngineImpl* g_engine = nullptr;
 
+} // namespace vision_engine
+
+// C API实现 - 在全局命名空间，使用 extern "C"
+extern "C" {
+
 void* ve_create_engine(const VeEngineOptions* options) {
     if (!options) {
         return nullptr;
@@ -39,25 +44,24 @@ void* ve_create_engine(const VeEngineOptions* options) {
     // 初始化日志
     VeLogger::Initialize("VisionEngine", true, false);
     
-    auto engine = new EngineImpl();
+    auto engine = new vision_engine::EngineImpl();
     VeStatusCode status = engine->Initialize(*options);
     
     if (status != VE_SUCCESS) {
         delete engine;
-        VE_LOG_ERROR("Failed to initialize engine: " + std::string(ve_status_string(status)));
         return nullptr;
     }
     
-    g_engine = engine;
+    vision_engine::g_engine = engine;
     return static_cast<void*>(engine);
 }
 
 void ve_destroy_engine(void* engine) {
     if (engine) {
-        auto eng = static_cast<EngineImpl*>(engine);
+        auto eng = static_cast<vision_engine::EngineImpl*>(engine);
         delete eng;
-        if (g_engine == eng) {
-            g_engine = nullptr;
+        if (vision_engine::g_engine == eng) {
+            vision_engine::g_engine = nullptr;
         }
     }
 }
@@ -68,10 +72,10 @@ const char* ve_get_version() {
 
 const char* ve_get_last_error(void* engine) {
     if (engine) {
-        auto eng = static_cast<EngineImpl*>(engine);
+        auto eng = static_cast<vision_engine::EngineImpl*>(engine);
         return eng->GetLastError().c_str();
     }
     return "Invalid engine handle";
 }
 
-} // namespace vision_engine
+} // extern "C"

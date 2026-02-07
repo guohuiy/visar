@@ -6,7 +6,10 @@
 #include <QComboBox>
 #include <QTextEdit>
 #include <QTimer>
+#include <QDir>
+#include <QCoreApplication>
 #include <memory>
+#include <string>
 
 class InferenceWorker;
 class ModelManager;
@@ -28,7 +31,13 @@ private slots:
     void onQuantizationChanged(int index);
     void onCheckForUpdates();
     void onInferenceComplete(const std::string& result);
+    void onInferenceError(const QString& error);
     void onPerformanceUpdate(double inferenceTime, double totalTime);
+    void onLogMessage(const QString& message);
+
+private:
+    void scanAvailableModels();
+    QString parseModelDisplayName(const QString& fileName);
 
 private:
     void setupUI();

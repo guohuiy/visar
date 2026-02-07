@@ -4,15 +4,13 @@
 #include "../core/ve_types.h"
 #include "../core/ve_error.h"
 
-// VE_API 宏定义 - 用于导出/导入符号
+// VE_API 宏定义 - 用于导出/导入符号 (静态库为空，DLL时才需要)
+#ifndef VE_API
 #ifdef _WIN32
-    #ifdef VISION_ENGINE_EXPORT
-        #define VE_API __declspec(dllexport)
-    #else
-        #define VE_API __declspec(dllimport)
-    #endif
+    #define VE_API
 #else
     #define VE_API __attribute__((visibility("default")))
+#endif
 #endif
 
 #ifdef __cplusplus

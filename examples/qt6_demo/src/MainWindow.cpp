@@ -65,9 +65,7 @@ void MainWindow::setupUI() {
     QVBoxLayout* modelLayout = new QVBoxLayout(modelGroup);
     
     modelSelector_ = new QComboBox();
-    modelSelector_->addItem("YOLOv5s - Object Detection");
-    modelSelector_->addItem("ResNet50 - Classification");
-    modelSelector_->addItem("MobileNet-SSD");
+    // 模型列表将由scanAvailableModels()动态填充
     modelLayout->addWidget(modelSelector_);
     
     backendSelector_ = new QComboBox();
@@ -120,6 +118,143 @@ void MainWindow::setupConnections() {
     
     connect(modelSelector_, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MainWindow::onModelChanged);
+    
+    // 连接推理信号
+    connect(inferenceWorker_.get(), &InferenceWorker::inferenceComplete,
+            this, &MainWindow::onInferenceComplete);
+    connect(inferenceWorker_.get(), &InferenceWorker::errorOccurred,
+            this, &MainWindow::onInferenceError);
+    
+    // 连接日志信号
+    connect(inferenceWorker_.get(), &InferenceWorker::logMessage,
+            this, &MainWindow::onLogMessage);
+    
+    // 初始化日志
+    logView_->append(QString("[%1] ===== VisionEngine Demo Started =====")
+        .arg(QDateTime::currentDateTime().toString()));
+    logView_->append(QString("[%1] Qt6 Demo Application Initialized")
+        .arg(QDateTime::currentDateTime().toString()));
+    
+    // 扫描可用模型并填充模型选择器
+    scanAvailableModels();
+    
+    // 加载默认模型（第一个可用模型）
+    if (modelSelector_->count() > 0) {
+        onModelChanged(modelSelector_->currentIndex());
+    } else {
+        logView_->append(QString("[%1] WARNING: No models found in models/ folder")
+            .arg(QDateTime::currentDateTime().toString()));
+    }
+}
+
+void MainWindow::scanAvailableModels() {
+    // 使用程序所在目录的models文件夹
+    QString appPath = QCoreApplication::applicationDirPath();
+    QString modelsPath = QDir(appPath).filePath("models");
+    
+    logView_->append(QString("[%1] Scanning for available models...")
+        .arg(QDateTime::currentDateTime().toString()));
+    logView_->append(QString("[%1] Models directory: %2")
+        .arg(QDateTime::currentDateTime().toString()).arg(modelsPath));
+    
+    QDir modelsDir(modelsPath);
+    if (!modelsDir.exists()) {
+        logView_->append(QString("[%1] WARNING: models/ folder not found at: %2")
+            .arg(QDateTime::currentDateTime().toString()).arg(modelsPath));
+        return;
+    }
+    
+    // 获取所有onnx文件
+    QStringList filters;
+    filters << "*.onnx";
+    modelsDir.setNameFilters(filters);
+    
+    QFileInfoList fileList = modelsDir.entryInfoList(QDir::Files);
+    
+    if (fileList.isEmpty()) {
+        logView_->append(QString("[%1] WARNING: No .onnx model files found in models/")
+            .arg(QDateTime::currentDateTime().toString()));
+        return;
+    }
+    
+    logView_->append(QString("[%1] Found %2 model(s):")
+        .arg(QDateTime::currentDateTime().toString())
+        .arg(fileList.size()));
+    
+    // 清空现有选项
+    modelSelector_->clear();
+    
+    // 遍历文件并添加
+    for (const QFileInfo& fileInfo : fileList) {
+        QString fileName = fileInfo.fileName();
+        QString displayName = fileName;
+        
+        // 解析模型名称
+        displayName = parseModelDisplayName(fileName);
+        
+        // 添加到选择器
+        modelSelector_->addItem(displayName, fileName);  // 保存真实文件名
+        
+        logView_->append(QString("[%1]   - %2 (%3)")
+            .arg(QDateTime::currentDateTime().toString())
+            .arg(displayName)
+            .arg(fileInfo.size() / 1024.0, 0, 'f', 1).append(" KB"));
+    }
+    
+    logView_->append(QString("[%1] Model scan completed. %2 model(s) available.")
+        .arg(QDateTime::currentDateTime().toString())
+        .arg(modelSelector_->count()));
+}
+
+QString MainWindow::parseModelDisplayName(const QString& fileName) {
+    // 从文件名提取模型显示名称
+    QString name = fileName;
+    
+    // 移除扩展名 (.onnx)
+    if (name.endsWith(".onnx", Qt::CaseInsensitive)) {
+        name = name.left(name.length() - 5);
+    }
+    
+    // 规范化模型名称
+    if (name.contains("yolov8n", Qt::CaseInsensitive)) {
+        return "YOLOv8n - Object Detection";
+    } else if (name.contains("yolov8s", Qt::CaseInsensitive)) {
+        return "YOLOv8s - Object Detection";
+    } else if (name.contains("yolov8m", Qt::CaseInsensitive)) {
+        return "YOLOv8m - Object Detection";
+    } else if (name.contains("yolov8l", Qt::CaseInsensitive)) {
+        return "YOLOv8l - Object Detection";
+    } else if (name.contains("yolov8x", Qt::CaseInsensitive)) {
+        return "YOLOv8x - Object Detection";
+    } else if (name.contains("yolov5n", Qt::CaseInsensitive)) {
+        return "YOLOv5n - Object Detection";
+    } else if (name.contains("yolov5s", Qt::CaseInsensitive)) {
+        return "YOLOv5s - Object Detection";
+    } else if (name.contains("yolov5m", Qt::CaseInsensitive)) {
+        return "YOLOv5m - Object Detection";
+    } else if (name.contains("yolov5l", Qt::CaseInsensitive)) {
+        return "YOLOv5l - Object Detection";
+    } else if (name.contains("yolov5x", Qt::CaseInsensitive)) {
+        return "YOLOv5x - Object Detection";
+    } else if (name.contains("resnet50", Qt::CaseInsensitive)) {
+        return "ResNet50 - Classification";
+    } else if (name.contains("resnet", Qt::CaseInsensitive)) {
+        return QString("ResNet - %1").arg(name);
+    } else if (name.contains("mobilenet", Qt::CaseInsensitive)) {
+        return "MobileNet - Classification";
+    } else if (name.contains("ssd", Qt::CaseInsensitive)) {
+        return "SSD - Object Detection";
+    } else if (name.contains("yolo", Qt::CaseInsensitive)) {
+        return QString("YOLO - %1").arg(name);
+    } else {
+        // 智能格式化：下划线转空格，首字母大写
+        QString formatted = name;
+        formatted.replace('_', ' ');
+        if (!formatted.isEmpty()) {
+            formatted[0] = formatted[0].toUpper();
+        }
+        return formatted;
+    }
 }
 
 void MainWindow::loadEngineConfig() {
@@ -166,7 +301,47 @@ void MainWindow::onStartInference() {
 }
 
 void MainWindow::onModelChanged(int index) {
-    updateStatusBar(QString("Model changed to: %1").arg(modelSelector_->currentText()));
+    if (index < 0 || modelSelector_->count() == 0) {
+        logView_->append(QString("[%1] WARNING: No model selected")
+            .arg(QDateTime::currentDateTime().toString()));
+        return;
+    }
+    
+    QString modelName = modelSelector_->currentText();
+    QString modelFileName = modelSelector_->itemData(index).toString();
+    QString modelPath = QString("models/%1").arg(modelFileName);
+    
+    updateStatusBar(QString("Model changed to: %1").arg(modelName));
+    
+    logView_->append(QString("[%1] === Model Selection Changed ===")
+        .arg(QDateTime::currentDateTime().toString()));
+    logView_->append(QString("[%1] Selected model: %2")
+        .arg(QDateTime::currentDateTime().toString()).arg(modelName));
+    logView_->append(QString("[%1] Model file: %2")
+        .arg(QDateTime::currentDateTime().toString()).arg(modelFileName));
+    logView_->append(QString("[%1] Model path: %2")
+        .arg(QDateTime::currentDateTime().toString()).arg(modelPath));
+    
+    // 检查模型文件是否存在
+    if (!QFile::exists(modelPath)) {
+        logView_->append(QString("[%1] WARNING: Model file not found: %2")
+            .arg(QDateTime::currentDateTime().toString()).arg(modelPath));
+        logView_->append(QString("[%1] Will use demo mode with simulated detections")
+            .arg(QDateTime::currentDateTime().toString()));
+    } else {
+        logView_->append(QString("[%1] Model file exists, loading...")
+            .arg(QDateTime::currentDateTime().toString()));
+        inferenceWorker_->loadModel(modelPath);
+    }
+    
+    logView_->append(QString("[%1] ============================")
+        .arg(QDateTime::currentDateTime().toString()));
+}
+
+void MainWindow::onInferenceError(const QString& error) {
+    resultLabel_->setText(QString("Error: %1").arg(error));
+    logView_->append(QString("[%1] Inference Error: %2")
+        .arg(QDateTime::currentDateTime().toString()).arg(error));
 }
 
 void MainWindow::onBackendChanged(int index) {
@@ -185,4 +360,8 @@ void MainWindow::onInferenceComplete(const std::string& result) {
 
 void MainWindow::onPerformanceUpdate(double inferenceTime, double totalTime) {
     perfMonitor_->addSample(inferenceTime);
+}
+
+void MainWindow::onLogMessage(const QString& message) {
+    logView_->append(message);
 }

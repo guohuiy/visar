@@ -4,15 +4,13 @@
 #include "../core/ve_types.h"
 #include "../core/ve_error.h"
 
-// VE_API 宏定义 - 用于导出/导入符号
+// VE_API 宏定义 - 用于导出/导入符号 (静态库为空，DLL时才需要)
+#ifndef VE_API
 #ifdef _WIN32
-    #ifdef VISION_ENGINE_EXPORT
-        #define VE_API __declspec(dllexport)
-    #else
-        #define VE_API __declspec(dllimport)
-    #endif
+    #define VE_API
 #else
     #define VE_API __attribute__((visibility("default")))
+#endif
 #endif
 
 #ifdef __cplusplus
@@ -52,6 +50,11 @@ public:
     double GetInferenceTimeMs() const;
 
     /**
+     * @brief 设置推理耗时 (毫秒) - 仅供内部使用
+     */
+    void SetInferenceTimeMs(double time_ms);
+
+    /**
      * @brief 获取原始输出
      */
     const void* GetRawOutput() const;
@@ -70,6 +73,11 @@ public:
      * @brief 获取JSON格式结果
      */
     std::string ToJSON() const;
+
+    /**
+     * @brief 添加检测结果
+     */
+    void AddDetection(const VeDetection& detection);
 
     /**
      * @brief 转换为可视化结果

@@ -231,12 +231,29 @@ typedef struct {
     int32_t num_threads;               // 线程数
     bool enable_profiling;            // 启用性能分析
     bool enable_debug;                // 启用调试
-    const char* model_path;            // 模型路径
+    const char* model_path;           // 模型路径
     const char* config_path;          // 配置文件路径
-    const char* cache_path;           // 缓存路径
+    const char* cache_path;          // 缓存路径
     int32_t batch_size;               // 默认批大小
     int32_t gpu_id;                   // GPU设备ID
 } VeEngineOptions;
+
+// 量化配置 (C API)
+typedef struct {
+    int32_t type;                     // 量化类型
+    int32_t calibration_method;        // 校准方法
+    int32_t calibration_samples;       // 校准样本数
+    bool mixed_precision;              // 混合精度
+    const char* fp16_layers;          // FP16层 (逗号分隔)
+} VeQuantConfig;
+
+// 量化评估指标 (C API)
+typedef struct {
+    float accuracy_drop;              // 精度损失
+    float inference_speedup;          // 推理加速比
+    size_t model_size_reduction;      // 模型大小减少量
+    float compression_ratio;          // 压缩比
+} VeQuantizationMetrics;
 
 // 回调函数类型
 typedef void (*VeProgressCallback)(float progress, const char* message);

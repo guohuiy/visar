@@ -9,6 +9,15 @@
  * 支持INT8量化、OTA热更新
  */
 
+// VE_API 宏定义 (静态库为空，DLL时才需要)
+#ifndef VE_API
+#ifdef _WIN32
+    #define VE_API
+#else
+    #define VE_API __attribute__((visibility("default")))
+#endif
+#endif
+
 #include "core/ve_types.h"
 #include "core/ve_error.h"
 #include "core/ve_options.h"

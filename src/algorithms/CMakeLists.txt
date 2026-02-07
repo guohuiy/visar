@@ -1,6 +1,9 @@
 # Algorithms模块CMakeLists.txt
 cmake_minimum_required(VERSION 3.16)
 
+# 定义导出宏 (Windows)
+add_compile_definitions(VISION_ENGINE_EXPORT=1)
+
 # 创建算法库
 add_library(vision_engine_algorithms STATIC
     ve_algorithms.cpp

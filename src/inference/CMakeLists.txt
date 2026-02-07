@@ -9,6 +9,9 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../../src/core
 )
 
+# 定义导出宏 (Windows)
+add_compile_definitions(VISION_ENGINE_EXPORT=1)
+
 # 创建推理库
 add_library(vision_engine_inference STATIC
     ve_model.cpp

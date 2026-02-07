@@ -1,0 +1,15 @@
+# VisionEngine Python 测试依赖
+# ================================
+# 安装命令: pip install -r requirements.txt
+
+# 核心依赖
+numpy>=1.21.0
+
+# ONNX Runtime (可选，GPU版本需要单独安装)
+# CPU版本
+onnxruntime>=1.10.0
+# GPU版本 (需要CUDA环境)
+# onnxruntime-gpu>=1.10.0
+
+# 图像处理
+Pillow>=9.0.0
