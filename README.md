@@ -67,6 +67,19 @@ VisionEngine/
 
 ## 新增功能 (v2.0)
 
+### 0. SIMD编译优化
+
+```cmake
+# CMake选项 (默认启用)
+-DENABLE_AVX2=ON          # AVX2 SIMD加速
+-DENABLE_AVX512=OFF       # AVX512 SIMD加速
+-DENABLE_NEON=OFF         # ARM NEON SIMD加速
+
+# 编译标志
+# GCC/Clang: -mavx2 -mfma -O3 -ffast-math -funroll-loops
+# MSVC: /arch:AVX2 /O2 /Oi /Ot /fp:fast
+```
+
 ### 1. TensorRT GPU加速
 
 支持NVIDIA GPU加速推理，提供FP16/INT8精度支持：
@@ -166,6 +179,145 @@ const char* name = GetCOCOClassName(class_id);
 auto visualized = DetectionVisualizer::DrawDetections(
     image_data, width, height, detections);
 ```
+
+### 4. 多尺度特征融合
+
+支持多尺度特征图融合，提升小目标检测能力：
+
+```cpp
+#include "ve_multi_scale.h"
+
+using namespace vision_engine::postprocess;
+
+// 配置多尺度检测
+MultiScaleDetector detector;
+MultiScaleConfig config;
+config.confidence_threshold = 0.5f;
+config.nms_threshold = 0.45f;
+config.strides = {8, 16, 32};  // P3, P4, P5
+detector.SetConfig(config);
+
+// 执行多尺度检测
+auto detections = detector.Detect(outputs, shapes);
+```
+
+### 5. 快速NMS算法
+
+使用空间哈希索引加速NMS，O(n)复杂度：
+
+```cpp
+#include "ve_fast_nms.h"
+
+using namespace vision_engine::postprocess;
+
+// 配置Fast-NMS
+FastNMS nms;
+FastNMSConfig config;
+config.iou_threshold = 0.45f;
+config.max_detections = 100;
+config.grid_size = 64;
+nms.SetConfig(config);
+
+// 执行快速NMS
+auto result = nms.Process(detections);
+```
+
+### 6. 内存池优化
+
+预分配64字节对齐内存，减少malloc/free开销：
+
+```cpp
+#include "ve_memory_pool.h"
+
+using namespace vision_engine;
+
+// 获取预分配内存
+auto& pool = TensorMemoryPool::Instance();
+float* tensor = pool.AllocateTensor(640, 640, 3);
+
+// 使用内存...
+
+// 归还到池中
+pool.Deallocate(tensor);
+```
+
+### 7. 测试时增强 (TTA)
+
+通过多尺度、翻转等增强提升检测精度：
+
+```cpp
+#include "ve_tta.h"
+
+using namespace vision_engine::tta;
+
+// 配置TTA
+TTAEngine tta;
+TTAConfig config;
+config.horizontal_flip = true;
+config.multi_scale = true;
+config.scales = {0.83f, 1.0f, 1.17f};
+tta.SetConfig(config);
+
+// 执行TTA推理
+auto result = tta.Process(image, width, height, infer_func);
+```
+
+### 8. TensorRT INT8量化
+
+支持TensorRT INT8量化推理：
+
+```cpp
+#include "ve_tensorrt_int8.h"
+
+using namespace vision_engine;
+
+// 配置INT8量化
+TensorRTINT8Builder builder;
+INT8QuantConfig config;
+config.enable_int8 = true;
+config.max_batch_size = 8;
+builder.ConfigureINT8(config);
+
+// 设置校准数据
+builder.SetCalibrationData(calibration_data);
+
+// 构建引擎
+builder.BuildEngine("model_int8.trt");
+```
+
+### 9. Python量化工具
+
+```bash
+# PTQ量化
+python tools/quantization/quantize_model.py \
+    --model yolov8n.onnx \
+    --calib-data ./calib_images/ \
+    --output yolov8n_int8.onnx
+
+# FP16量化
+python tools/quantization/quantize_model.py \
+    --model yolov8n.onnx \
+    --quantize-type fp16 \
+    --output yolov8n_fp16.onnx
+
+# 带精度评估
+python tools/quantization/quantize_model.py \
+    --model yolov8n.onnx \
+    --calib-data ./calib_images/ \
+    --eval-data ./test_images/ \
+    --output yolov8n_int8.onnx
+```
+
+## 性能优化预期
+
+| 优化项 | 预期提升 |
+|--------|----------|
+| SIMD (AVX2) | 预处理速度 +40% |
+| 内存池 | 推理延迟 -30% |
+| Fast-NMS | NMS时间 -50% |
+| 多尺度融合 | mAP +5-10% |
+| TTA增强 | mAP +2-3% |
+| INT8量化 | 速度 +2-4x, 模型 -4x |
 
 ## 编译状态
 

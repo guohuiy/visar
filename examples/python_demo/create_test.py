@@ -1,4 +1,5 @@
-import os,sys,time,numpy as np
+import os
+code = '''import os,sys,time,numpy as np
 from pathlib import Path
 try:
     import onnxruntime as ort
@@ -155,3 +156,8 @@ def main():
 
 if __name__=='__main__':
     main()
+'''
+fp=open(r'd:\codes\QT_V\visar-master\VisionEngine\examples\python_demo\test_vision_engine.py','w',encoding='utf-8')
+fp.write(code)
+fp.close()
+print('OK, file created, size:', os.path.getsize(r'd:\codes\QT_V\visar-master\VisionEngine\examples\python_demo\test_vision_engine.py'), 'bytes')

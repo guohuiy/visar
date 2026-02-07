@@ -5,10 +5,48 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# 全局包含路径 - 使用绝对路径
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /source-charset:utf-8")
+# ========== SIMD 编译选项 ==========
+option(ENABLE_AVX2 "Enable AVX2 SIMD instructions" ON)
+option(ENABLE_AVX512 "Enable AVX512 SIMD instructions" OFF)
+option(ENABLE_NEON "Enable ARM NEON SIMD instructions" OFF)
 
-# 头文件包含路径
+# SIMD 编译标志
+if(ENABLE_AVX2)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2 -mfma")
+    elseif(MSVC)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX2")
+    endif()
+    message(STATUS "AVX2 SIMD: Enabled")
+endif()
+
+if(ENABLE_AVX512)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512f -mavx512bw -mavx512vl")
+    endif()
+    message(STATUS "AVX512 SIMD: Enabled")
+endif()
+
+if(ENABLE_NEON)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=neon-vfpv4 -funroll-loops")
+    endif()
+    message(STATUS "ARM NEON SIMD: Enabled")
+endif()
+
+# 性能优化标志
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -funroll-loops")
+elseif(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2 /Oi /Ot /fp:fast")
+endif()
+
+# UTF-8 编码支持
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
+# 全局包含路径 - 使用绝对路径
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
